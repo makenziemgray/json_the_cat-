@@ -1,34 +1,24 @@
 const needle = require('needle');
 
-// Grab breed name from command-line args
-const breedName = process.argv[2];
+const fetchBreedDescription = function(breedName, callback) {
+  const url = `https://api.thecatapi.com/v1/breeds/search?q=${breedName}`;
 
-if (!breedName) {
-  console.log("Please provide a cat breed name.");
-  process.exit();
-}
+  needle.get(url, (error, response) => {
+    if (error) {
+      callback(`Request failed. Error details: ${error.message}`, null);
+      return;
+    }
 
-// Build the request URL
-const url = `https://api.thecatapi.com/v1/breeds/search?q=${breedName}`;
+    const body = response.body;
 
-needle.get(url, (error, response) => {
-  if (error) {
-    console.error("Request failed. Error details:", error.message);
-    return;
-  }
+    if (!Array.isArray(body) || body.length === 0) {
+      callback(`No results found for "${breedName}"`, null);
+      return;
+    }
 
-  const body = response.body;
-
-  if (!Array.isArray(body)) {
-    console.error("Unexpected response format.");
-    return;
-  }
-
-  if (body.length === 0) {
-    console.log(`No results found for "${breedName}".`);
-  } else {
     const cat = body[0];
-    console.log(`Breed: ${cat.name}`);
-    console.log(`Description: ${cat.description}`);
-  }
-});
+    callback(null, cat.description);
+  });
+};
+
+module.exports = { fetchBreedDescription };
